@@ -1,0 +1,20 @@
+# Node & Dependencies (archivos pesados descargados por npm)
+node_modules/
+package-lock.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment Variables (claves privadas y contraseñas)
+.env
+.env.local
+
+# IDE Configs
+.idea/
+.vscode/
+
+# Build Outputs
+dist/
+build/
+.next/
