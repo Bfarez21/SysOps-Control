@@ -1,5 +1,7 @@
 // 1. importamos la libreria de express
 const express = require('express');
+// cors
+const cors = require('cors');
 // libreria para leer metrica del SO
 const si = require('systeminformation');
 
@@ -8,6 +10,7 @@ const app = express();
 // 3. defnicmos el port 
 const PORT = process.env.PORT || 3001;
 
+app.use(cors()); // habilitamos cors 
 //4. 0mitimos que el servidor entida json
 app.use(express.json());
 
