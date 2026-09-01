@@ -12,6 +12,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sysops-net
 
   # Motor de Automatización n8n
   n8n:
@@ -29,6 +31,52 @@ services:
       - N8N_SECURE_COOKIE=false
     volumes:
       - n8n_data:/home/node/.n8n
+    networks:
+      - sysops-net
+      
+  # --- BACKEND (API Express + Watchdog) ---
+  api:
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile
+    container_name: sysops-api
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DOCKER_SOCKET_PATH=/var/run/docker.sock
+      # Usamos el nombre del servicio 'sysops-n8n' gracias a la red interna
+      - N8N_WEBHOOK_URL=http://sysops-n8n:5678/webhook/container-alert
+    volumes:
+      # Permitir que el backend controle Docker dentro del servidor Ubuntu
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - n8n
+      - postgres
+    networks:
+      - sysops-net
+
+  # --- FRONTEND (Dashboard Web) ---
+  client:
+    build:
+      context: ../apps/client
+      dockerfile: Dockerfile
+    container_name: sysops-client
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+    depends_on:
+      - api
+    networks:
+      - sysops-net
+
+# --- RED INTERNA CUSTOM Y VOLÚMENES ---
+networks:
+  sysops-net:
+    driver: bridge
 
 volumes:
   postgres_data:
