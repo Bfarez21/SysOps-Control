@@ -4,6 +4,16 @@
 
 ---
 
+##  Resultados e Impacto Operativo
+
+Este proyecto transforma la administración tradicional de servidores en un flujo moderno, eficiente y remoto:
+
+* **Eliminación del Acceso por SSH:** Reduce la dependencia de la consola de comandos (`top`, `htop`, `docker ps`) al concentrar el estado del procesador, memoria y uptime del servidor Ubuntu en un único dashboard web.
+* **Reducción del Tiempo de Respuesta (MTTR):** Permite reiniciar o detener contenedores instantáneamente desde la interfaz gráfica sin ejecutar comandos manuales en el terminal.
+* **Monitoreo Proactivo Ubicuo:** Gracias al flujo *event-driven* con n8n, el equipo de TI recibe notificaciones instantáneas en Telegram ante la caída de cualquier servicio, incluyendo el timestamp exacto en hora local (`America/Guayaquil`), permitiendo la toma de decisiones desde cualquier lugar y dispositivo.
+* **Infraestructura Desacoplada y Portable:** Al estar 100% containerizado con Docker Compose y variables de entorno parametrizadas, el stack se despliega en cuestión de segundos en cualquier servidor Linux.
+
+---
 ##  Arquitectura del Sistema
 
 - **Frontend:** Next.js 16 + Tailwind CSS (Dashboard interactivo en tiempo real).
