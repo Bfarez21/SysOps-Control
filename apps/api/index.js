@@ -70,7 +70,7 @@ const triggerAlert = async (containerName, state) => {
     event: 'CONTAINER_DOWN',
     service: containerName,
     status: state,
-    timestamp: getLocalTimestamp(eventTimestampFromDocker)
+    timestamp: getLocalTimestamp()
   };
 
   console.log(' Enviando Webhook de Alerta a n8n:', payload);
