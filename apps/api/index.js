@@ -55,7 +55,11 @@ const triggerAlert = async (containerName, state) => {
     event: 'CONTAINER_DOWN',
     service: containerName,
     status: state,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toLocaleString('es-EC', {
+    timeZone: 'America/Guayaquil',
+    dateStyle: 'short',
+    timeStyle: 'medium'
+   })
   };
 
   console.log(' Enviando Webhook de Alerta a n8n:', payload);
