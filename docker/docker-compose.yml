@@ -33,7 +33,7 @@ services:
       - n8n_data:/home/node/.n8n
     networks:
       - sysops-net
-      
+
   # --- BACKEND (API Express + Watchdog) ---
   api:
     build:
@@ -58,11 +58,11 @@ services:
       - sysops-net
 
   # --- FRONTEND (Dashboard Web) ---
-  client:
+  web:
     build:
-      context: ../apps/client
+      context: ../apps/web
       dockerfile: Dockerfile
-    container_name: sysops-client
+    container_name: sysops-web
     restart: always
     ports:
       - "3000:3000"
