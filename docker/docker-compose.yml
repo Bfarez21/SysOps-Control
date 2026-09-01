@@ -1,5 +1,6 @@
+
 services:
-  # Base de datos PostgreSQL para n8n y nuestro Backend
+  # Base de datos PostgreSQL para n8n y Backend
   postgres:
     image: postgres:15-alpine
     container_name: sysops-postgres
@@ -46,10 +47,8 @@ services:
     environment:
       - PORT=3001
       - DOCKER_SOCKET_PATH=/var/run/docker.sock
-      # Usamos el nombre del servicio 'sysops-n8n' gracias a la red interna
       - N8N_WEBHOOK_URL=http://sysops-n8n:5678/webhook/container-alert
     volumes:
-      # Permitir que el backend controle Docker dentro del servidor Ubuntu
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - n8n
@@ -57,17 +56,20 @@ services:
     networks:
       - sysops-net
 
-  # --- FRONTEND (Dashboard Web) ---
+  # --- FRONTEND (Dashboard Web Next.js) ---
   web:
     build:
       context: ../apps/web
       dockerfile: Dockerfile
+      args:
+        # Pasa la variable SERVER_IP definida en docker/.env durante el build
+        NEXT_PUBLIC_API_URL: http://${SERVER_IP:-192.168.18.82}:3001
     container_name: sysops-web
     restart: always
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://192.168.18.82:3001
+      - PORT=3000
     depends_on:
       - api
     networks:
