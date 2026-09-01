@@ -2,6 +2,9 @@
 
 import { useState, useEffect} from 'react';
 
+// URL base administrada vía variable de entorno 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function Home() {
   const[metrics, setMetrics] = useState(null);
   const[containers, setContainers] = useState([]);
@@ -12,19 +15,19 @@ export default function Home() {
   const fetchData = async () => {
     // Leemos métricas de forma independiente
     try {
-      const resMetrics = await fetch('http://localhost:3001/api/metrics');
+      const resMetrics = await fetch(`${API_URL}/api/metrics`);
       if (resMetrics.ok) {
         const dataMetrics = await resMetrics.json();
         setMetrics(dataMetrics);
         setError(null);
       }
     } catch (err) {
-      setError('No se pudo conectar con el servidor Backend (puerto 3001).');
+      setError('No se pudo conectar con el servidor Backend en ${API_URL}.');
     }
 
     // Leemos contenedores de forma independiente
     try {
-      const resContainers = await fetch('http://localhost:3001/api/containers');
+      const resContainers = await fetch(`${API_URL}/api/containers`);
       if (resContainers.ok) {
         const dataContainers = await resContainers.json();
         setContainers(dataContainers);
@@ -39,7 +42,7 @@ export default function Home() {
   // acciones botones contenedores
 const handleAction = async (id, action) => {
   try {
-    const res = await fetch(`http://localhost:3001/api/containers/${id}/action`, {
+    const res = await fetch(`${API_URL}/api/containers/${id}/action`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action })
