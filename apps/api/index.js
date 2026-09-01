@@ -15,6 +15,21 @@ const docker = new Docker({ socketPath });
 app.use(cors());
 app.use(express.json());
 
+// Función helper para forzar el timestamp local
+const getLocalTimestamp = (dateInput) => {
+  const date = dateInput ? new Date(dateInput) : new Date();
+  return date.toLocaleString('es-EC', {
+    timeZone: 'America/Guayaquil',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+};
+
 // --- ESTADO PREVIO PARA DETECTAR CAÍDAS ---
 let previousContainerStates = {};
 
@@ -55,11 +70,7 @@ const triggerAlert = async (containerName, state) => {
     event: 'CONTAINER_DOWN',
     service: containerName,
     status: state,
-    timestamp: new Date().toLocaleString('es-EC', {
-    timeZone: 'America/Guayaquil',
-    dateStyle: 'short',
-    timeStyle: 'medium'
-   })
+    timestamp: getLocalTimestamp(eventTimestampFromDocker)
   };
 
   console.log(' Enviando Webhook de Alerta a n8n:', payload);
