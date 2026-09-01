@@ -4,28 +4,41 @@ import { useState, useEffect} from 'react';
 
 export default function Home() {
   const[metrics, setMetrics] = useState(null);
+  const[containers, setContainers] = useState([]);
   const[loading, setLoading] = useState(true);
   const[error, setError] = useState(null);
 
   //funcion para consultar api
-  const fetchMetrics = async () => {
+  const fetchData = async () => {
+    // Leemos métricas de forma independiente
     try {
-      const response = await fetch('http://localhost:3001/api/metrics');
-      if(!response.ok){
-        throw new Error('Error al obtener metricas del sistema');
+      const resMetrics = await fetch('http://localhost:3001/api/metrics');
+      if (resMetrics.ok) {
+        const dataMetrics = await resMetrics.json();
+        setMetrics(dataMetrics);
+        setError(null);
       }
-      const data = await response.json();
-      setMetrics(data);
-    } catch (error) {
-      setError(error.message);
+    } catch (err) {
+      setError('No se pudo conectar con el servidor Backend (puerto 3001).');
+    }
+
+    // Leemos contenedores de forma independiente
+    try {
+      const resContainers = await fetch('http://localhost:3001/api/containers');
+      if (resContainers.ok) {
+        const dataContainers = await resContainers.json();
+        setContainers(dataContainers);
+      }
+    } catch (err) {
+      console.warn('Docker no disponible');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchMetrics();
-    const interval = setInterval(fetchMetrics, 3000);
+    fetchData();
+    const interval = setInterval(fetchData, 3000);
     return ()=> clearInterval(interval);
   }, []);
 
@@ -109,6 +122,46 @@ export default function Home() {
 
         </div>
       )}
+      {/* Sección de Contenedores Docker */}
+      <section className="max-w-6xl mx-auto">
+        <h2 className="text-xl font-bold mb-4 text-slate-200">Servicios y Contenedores Monitoreados</h2>
+        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg">
+          {containers.length === 0 ? (
+            <div className="p-6 text-center text-slate-500">
+              No se encontraron contenedores corriendo o Docker Desktop no está activo.
+            </div>
+          ) : (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-800 bg-slate-950/50 text-slate-400 text-xs uppercase font-mono">
+                  <th className="p-4">Nombre</th>
+                  <th className="p-4">Imagen</th>
+                  <th className="p-4">Estado</th>
+                  <th className="p-4">Detalle</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800 text-sm">
+                {containers.map(c => (
+                  <tr key={c.id} className="hover:bg-slate-800/50 transition">
+                    <td className="p-4 font-semibold text-indigo-300">{c.name}</td>
+                    <td className="p-4 font-mono text-xs text-slate-400">{c.image}</td>
+                    <td className="p-4">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        c.state === 'running' 
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                          : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                      }`}>
+                        {c.state.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="p-4 text-xs text-slate-400 font-mono">{c.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </section>
     </main>
   );
 }

@@ -5,10 +5,16 @@ const cors = require('cors');
 // libreria para leer metrica del SO
 const si = require('systeminformation');
 
+// docker
+const Docker = require('dockerode');
+
 // 2. creamos una instancia de express
 const app = express();
 // 3. defnicmos el port 
 const PORT = process.env.PORT || 3001;
+
+//inicializamos docker
+const docker = new Docker({socketPath: '//./pipe/docker_engine'});
 
 app.use(cors()); // habilitamos cors 
 //4. 0mitimos que el servidor entida json
@@ -50,8 +56,29 @@ app.get('/api/metrics', async (req, res) =>{
         res.status(500).json({error: 'Error al obtner datos del sistema'});
     }
 });
-// 6. corremos el servidor
 
+app.get('/api/containers', async (req, res) => {
+    try {
+        //listamos todos los contenedores
+        const containers = await docker.listContainers({all: true});
+        
+        const formattedContainers = containers.map(container => ({
+            id: container.Id.substring(0, 12), // ID corto
+            name: container.Names[0].replace('/', ''), // nombre del contenedor
+            image: container.Image,
+            state: container.State,
+            status: container.Status
+        }));
+
+        res.json(formattedContainers);
+    } catch (error) {
+        console.warn(' Docker Engine no está respondiendo:', error.message);
+        res.json([]);
+    }
+});
+
+
+// 6. corremos el servidor
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
