@@ -36,6 +36,25 @@ export default function Home() {
     }
   };
 
+  // acciones botones contenedores
+const handleAction = async (id, action) => {
+  try {
+    const res = await fetch(`http://localhost:3001/api/containers/${id}/action`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action })
+    });
+    
+    if (res.ok) {
+      fetchData(); // Recargamos la lista inmediatamente
+    } else {
+      alert(`Error al ejecutar la acción ${action}`);
+    }
+  } catch (err) {
+    alert('Error al conectar con la API');
+  }
+};
+
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 3000);
@@ -138,6 +157,7 @@ export default function Home() {
                   <th className="p-4">Imagen</th>
                   <th className="p-4">Estado</th>
                   <th className="p-4">Detalle</th>
+                  <th className="p-4">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800 text-sm">
@@ -155,6 +175,20 @@ export default function Home() {
                       </span>
                     </td>
                     <td className="p-4 text-xs text-slate-400 font-mono">{c.status}</td>
+                    <td className="p-4 flex gap-2">
+                      <button
+                        onClick={() => handleAction(c.id, 'restart')}
+                        className="px-2.5 py-1 text-xs font-semibold bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 rounded hover:bg-indigo-600/40 transition"
+                      >
+                        Reiniciar
+                      </button>
+                      <button
+                        onClick={() => handleAction(c.id, 'stop')}
+                        className="px-2.5 py-1 text-xs font-semibold bg-red-600/20 text-red-300 border border-red-500/30 rounded hover:bg-red-600/40 transition"
+                      >
+                        Detener
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
