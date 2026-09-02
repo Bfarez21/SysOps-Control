@@ -6,9 +6,9 @@ services:
     container_name: sysops-postgres
     restart: always
     environment:
-      POSTGRES_USER: sysops_user
-      POSTGRES_PASSWORD: sysops_password
-      POSTGRES_DB: sysops_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
@@ -45,9 +45,15 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - PORT=3001
-      - DOCKER_SOCKET_PATH=/var/run/docker.sock
-      - N8N_WEBHOOK_URL=http://sysops-n8n:5678/webhook/container-alert
+      - PORT=${API_PORT:-3001}
+      - DOCKER_SOCKET_PATH=${DOCKER_SOCKET_PATH:-/var/run/docker.sock}
+      - N8N_WEBHOOK_URL= ${N8N_WEBHOOK_URL}
+      # Variables pasadas a Express (para db.js)
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
