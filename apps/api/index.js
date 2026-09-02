@@ -4,7 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const si = require('systeminformation');
 const Docker = require('dockerode');
-
+const { getContainerStates, setIntentionalStop } = require('./db');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -134,19 +134,21 @@ app.get('/api/metrics', async (req, res) => {
 app.get('/api/containers', async (req, res) => {
   try {
     const containers = await docker.listContainers({ all: true });
+    const statesMap = await getContainerStates();
 
-    const formattedContainers = containers.map(container => ({
-      id: container.Id.substring(0, 12),
+    const result = containers.map(container => ({
+      id: container.Id,
       name: container.Names[0].replace('/', ''),
       image: container.Image,
       state: container.State,
-      status: container.Status
+      status: container.Status,
+      intentionalStop: statesMap[container.Id] || false
     }));
 
-    res.json(formattedContainers);
+    res.json(result);
   } catch (error) {
-    console.warn(' Docker Engine no está respondiendo:', error.message);
-    res.json([]);
+    console.warn(' Error al obtener contenedores:', error);
+    res.status(500).json({ error: 'Docker Engine no está respondiendo' });
   }
 });
 
@@ -155,27 +157,38 @@ app.post('/api/containers/:id/action', async (req, res) => {
   const { id } = req.params;
   const { action } = req.body;
 
+  // Validar la acción de entrada de inmediato
+  if (!['stop', 'start', 'restart'].includes(action)) {
+    return res.status(400).json({ error: 'Acción no válida. Usa start, restart o stop.' });
+  }
+
   try {
     const container = docker.getContainer(id);
-
-    if (action === 'restart') {
-      await container.restart();
-      return res.json({ message: `Contenedor ${id} reiniciado con éxito` });
-    }
+    const inspectData = await container.inspect();
+    const containerName = inspectData.Name.replace('/', '');
 
     if (action === 'stop') {
       try {
         await container.stop();
       } catch (err) {
-        console.warn(`El contenedor ${id} ya estaba detenido o no respondió a tiempo.`);
+        console.warn(`El contenedor ${containerName} (${id}) ya estaba detenido o no respondió a tiempo.`);
       }
-      return res.json({ message: `Contenedor ${id} detenido con éxito` });
+      // Marcar como parada manual intencional
+      await setIntentionalStop(id, containerName, true);
+    } else if (action === 'restart' || action === 'start') {
+      if (action === 'restart') await container.restart();
+      if (action === 'start') await container.start();
+      // Limpiar la bandera al encender/reiniciar manualmente
+      await setIntentionalStop(id, containerName, false);
     }
 
-    res.status(400).json({ error: 'Acción no válida. Usa restart o stop' });
+    return res.json({ message: `Acción '${action}' ejecutada con éxito en ${containerName}` });
   } catch (error) {
-    console.error(`Error al ejecutar ${action}:`, error.message);
-    res.status(500).json({ error: `Error al ejecutar ${action}`, details: error.message });
+    console.error(`Error al ejecutar ${action} en ${id}:`, error.message);
+    return res.status(500).json({ 
+      error: `Error al ejecutar la acción ${action}`, 
+      details: error.message 
+    });
   }
 });
 
