@@ -179,6 +179,57 @@ app.post('/api/containers/:id/action', async (req, res) => {
   }
 });
 
+// metricas por contenedor
+app.get('/api/containers/:id/stats', async (req, res) =>{
+  try {
+    const container = docker.getContainer(req.params.id);
+    const inspectData = await container.inspect();
+    const statsData = await container.stats({stream: false});
+
+    // calculo cpu %
+    const cpuDelta = statsData.cpu_stats.cpu_usage.total-usage - statsData.precpu_stats.cpu_usage.total_usage;
+    const systemDelta = statsData.cpu_stats.system_cpu_usage - statsData.precpu_stats.system_cpu_usage;
+    const onlineCpus = statsData.cpu_stats.online_cpus || 1;
+    const cpuPercent = systemDelta > 0 && cpuDelta > 0 ? ((cpuDelta / systemDelta) * onlineCpus * 100).toFixed(2) : '0.00';
+
+    // Cálculo de Memoria
+    const memUsed = statsData.memory_stats.usage || 0;
+    const memLimit = statsData.memory_stats.limit || 1;
+    const memPercent = ((memUsed / memLimit) * 100).toFixed(2);
+
+    // Red (Network RX/TX)
+    let rxBytes = 0, txBytes = 0;
+    if (statsData.networks) {
+      Object.values(statsData.networks).forEach(net => {
+        rxBytes += net.rx_bytes || 0;
+        txBytes += net.tx_bytes || 0;
+      });
+    }
+
+    res.json({
+      id: req.params.id,
+      cpuPercent: parseFloat(cpuPercent),
+      memory: {
+        usedBytes: memUsed,
+        limitBytes: memLimit,
+        usagePercentage: parseFloat(memPercent)
+      },
+      network: {
+        rxMb: (rxBytes / (1024 * 1024)).toFixed(2),
+        txMb: (txBytes / (1024 * 1024)).toFixed(2)
+      },
+      startedAt: inspectData.State.StartedAt,
+      pids: statsData.pids_stats.current || 0
+    });
+  } catch (err) {
+    console.error(`Error al obtener stats del contenedor ${req.params.id}:`, err);
+    res.status(500).json({ error: 'No se pudieron obtener las métricas del contenedor' });
+  }
+  } catch (error) {
+    
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API corriendo en el puerto ${PORT}`);
 });
