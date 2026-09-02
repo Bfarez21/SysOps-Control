@@ -187,14 +187,14 @@ app.get('/api/containers/:id/stats', async (req, res) =>{
     const statsData = await container.stats({stream: false});
 
     // calculo cpu %
-    const cpuDelta = statsData.cpu_stats.cpu_usage.total-usage - statsData.precpu_stats.cpu_usage.total_usage;
+    const cpuDelta = statsData.cpu_stats.cpu_usage.total_usage - statsData.precpu_stats.cpu_usage.total_usage;
     const systemDelta = statsData.cpu_stats.system_cpu_usage - statsData.precpu_stats.system_cpu_usage;
     const onlineCpus = statsData.cpu_stats.online_cpus || 1;
     const cpuPercent = systemDelta > 0 && cpuDelta > 0 ? ((cpuDelta / systemDelta) * onlineCpus * 100).toFixed(2) : '0.00';
 
     // Cálculo de Memoria
-    const memUsed = statsData.memory_stats.usage || 0;
-    const memLimit = statsData.memory_stats.limit || 1;
+    const memUsed = statsData.memory_stats?.usage || 0;
+    const memLimit = statsData.memory_stats?.limit || 1;
     const memPercent = ((memUsed / memLimit) * 100).toFixed(2);
 
     // Red (Network RX/TX)
