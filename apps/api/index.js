@@ -225,9 +225,6 @@ app.get('/api/containers/:id/stats', async (req, res) =>{
     console.error(`Error al obtener stats del contenedor ${req.params.id}:`, err);
     res.status(500).json({ error: 'No se pudieron obtener las métricas del contenedor' });
   }
-  } catch (error) {
-    
-  }
 });
 
 app.listen(PORT, '0.0.0.0', () => {
