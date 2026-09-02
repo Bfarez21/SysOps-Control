@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 // URL base administrada vía variable de entorno 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -177,9 +177,9 @@ export default function Home() {
               </thead>
               <tbody className="divide-y divide-slate-800 text-sm">
                 {containers.map(c => (
-                  <tr key={c.id} className="contents">
+                  <React.Fragment key={c.id}>
                     {/* Fila Principal */}
-                    <tr className="hover:bg-slate-800/50 transition border-b border-slate-800/50">
+                    <tr className="hover:bg-slate-800/50 transition">
                       <td className="p-4 text-center">
                         <button
                           onClick={() => toggleExpand(c.id)}
@@ -263,7 +263,7 @@ export default function Home() {
                         </td>
                       </tr>
                     )}
-                  </tr>
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
