@@ -158,43 +158,132 @@ export default function Home() {
       {/* Sección de Contenedores Docker */}
       <section className="max-w-6xl mx-auto">
         <h2 className="text-lg sm:text-xl font-bold mb-4 text-slate-200">Servicios y Contenedores Monitoreados</h2>
-        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg">
-          {containers.length === 0 ? (
-            <div className="p-6 text-center text-slate-500 text-sm">
-              No se encontraron contenedores corriendo o Docker no está activo.
+
+        {containers.length === 0 ? (
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 text-center text-slate-500 text-sm">
+            No se encontraron contenedores corriendo o Docker no está activo.
+          </div>
+        ) : (
+          <>
+            {/* VISTA MÓVIL: Tarjetas independientes (solo visible en pantallas < 768px) */}
+            <div className="grid grid-cols-1 gap-4 md:hidden">
+              {containers.map(c => (
+                <div key={c.id} className="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg">
+                  {/* Encabezado de la Tarjeta */}
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="font-bold text-indigo-300 text-base">{c.name}</h3>
+                      <p className="font-mono text-xs text-slate-400">{c.image}</p>
+                    </div>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      c.state === 'running' 
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                        : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                    }`}>
+                      {(c.state || '').toUpperCase()}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-400 font-mono mb-4">{c.status}</p>
+
+                  {/* Acciones e Icono para Expandir en Móvil */}
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+                    <button
+                      onClick={() => toggleExpand(c.id)}
+                      className="text-xs text-indigo-400 font-semibold flex items-center gap-1 py-1"
+                    >
+                      {expandedContainers[c.id] ? '▲ Ocultar Métricas' : '▼ Ver Métricas'}
+                    </button>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleAction(c.id, 'restart')}
+                        className="px-3 py-1.5 text-xs font-semibold bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 rounded hover:bg-indigo-600/40 transition"
+                      >
+                        Reiniciar
+                      </button>
+                      <button
+                        onClick={() => handleAction(c.id, 'stop')}
+                        className="px-3 py-1.5 text-xs font-semibold bg-red-600/20 text-red-300 border border-red-500/30 rounded hover:bg-red-600/40 transition"
+                      >
+                        Detener
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Métricas desplegables dentro de la tarjeta móvil */}
+                  {expandedContainers[c.id] && (
+                    <div className="mt-4 pt-4 border-t border-slate-800/80 grid grid-cols-1 gap-3">
+                      {containerStats[c.id] ? (
+                        <>
+                          <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                            <span className="text-xs text-slate-400 block font-mono">CPU (Contenedor)</span>
+                            <span className="text-base font-bold text-indigo-400 mt-0.5 block">
+                              {containerStats[c.id].cpuPercent}%
+                            </span>
+                          </div>
+                          <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                            <span className="text-xs text-slate-400 block font-mono">RAM (Contenedor)</span>
+                            <span className="text-base font-bold text-emerald-400 mt-0.5 block">
+                              {containerStats[c.id].memory.usagePercentage}%
+                            </span>
+                            <span className="text-xs text-slate-500 block mt-0.5 font-mono">
+                              {(containerStats[c.id].memory.usedBytes / 1024 / 1024).toFixed(1)} MB usados
+                            </span>
+                          </div>
+                          <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                            <span className="text-xs text-slate-400 block font-mono">Tráfico Red (RX / TX)</span>
+                            <span className="text-xs font-bold text-sky-400 font-mono block mt-1">
+                              ↓ {containerStats[c.id].network.rxMb} MB | ↑ {containerStats[c.id].network.txMb} MB
+                            </span>
+                          </div>
+                          <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                            <span className="text-xs text-slate-400 block font-mono">Hilos / PIDs</span>
+                            <span className="text-base font-bold text-amber-400 mt-0.5 block">
+                              {containerStats[c.id].pids} procesos
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-xs text-slate-400 font-mono py-2 animate-pulse">
+                          Cargando métricas...
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-          ) : (
-            /* Contenedor con Scroll Horizontal Responsivo */
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[650px]">
+
+            {/* VISTA DESKTOP/TABLET: Tabla clásica (solo visible en pantallas ≥ 768px) */}
+            <div className="hidden md:block bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg">
+              <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-800 bg-slate-950/50 text-slate-400 text-xs uppercase font-mono">
-                    <th className="p-3 sm:p-4 w-10 text-center"></th>
-                    <th className="p-3 sm:p-4">Nombre</th>
-                    <th className="p-3 sm:p-4">Imagen</th>
-                    <th className="p-3 sm:p-4">Estado</th>
-                    <th className="p-3 sm:p-4">Detalle</th>
-                    <th className="p-3 sm:p-4">Acciones</th>
+                    <th className="p-4 w-10 text-center"></th>
+                    <th className="p-4">Nombre</th>
+                    <th className="p-4">Imagen</th>
+                    <th className="p-4">Estado</th>
+                    <th className="p-4">Detalle</th>
+                    <th className="p-4">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800 text-xs sm:text-sm">
+                <tbody className="divide-y divide-slate-800 text-sm">
                   {containers.map(c => (
                     <React.Fragment key={c.id}>
-                      {/* Fila Principal */}
                       <tr className="hover:bg-slate-800/50 transition">
-                        <td className="p-3 sm:p-4 text-center">
+                        <td className="p-4 text-center">
                           <button
                             onClick={() => toggleExpand(c.id)}
                             className="text-slate-400 hover:text-indigo-400 transition font-bold text-xs p-1 focus:outline-none"
-                            title="Ver métricas detalladas"
                           >
                             {expandedContainers[c.id] ? '▼' : '▶'}
                           </button>
                         </td>
-                        <td className="p-3 sm:p-4 font-semibold text-indigo-300 whitespace-nowrap">{c.name}</td>
-                        <td className="p-3 sm:p-4 font-mono text-xs text-slate-400 whitespace-nowrap">{c.image}</td>
-                        <td className="p-3 sm:p-4 whitespace-nowrap">
-                          <span className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-xs font-semibold ${
+                        <td className="p-4 font-semibold text-indigo-300">{c.name}</td>
+                        <td className="p-4 font-mono text-xs text-slate-400">{c.image}</td>
+                        <td className="p-4">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                             c.state === 'running' 
                               ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
                               : 'bg-red-500/10 text-red-400 border border-red-500/20'
@@ -202,56 +291,52 @@ export default function Home() {
                             {(c.state || '').toUpperCase()}
                           </span>
                         </td>
-                        <td className="p-3 sm:p-4 text-xs text-slate-400 font-mono whitespace-nowrap">{c.status}</td>
-                        <td className="p-3 sm:p-4 flex gap-2 whitespace-nowrap">
+                        <td className="p-4 text-xs text-slate-400 font-mono">{c.status}</td>
+                        <td className="p-4 flex gap-2">
                           <button
                             onClick={() => handleAction(c.id, 'restart')}
-                            className="px-2 py-1 text-xs font-semibold bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 rounded hover:bg-indigo-600/40 transition"
+                            className="px-2.5 py-1 text-xs font-semibold bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 rounded hover:bg-indigo-600/40 transition"
                           >
                             Reiniciar
                           </button>
                           <button
                             onClick={() => handleAction(c.id, 'stop')}
-                            className="px-2 py-1 text-xs font-semibold bg-red-600/20 text-red-300 border border-red-500/30 rounded hover:bg-red-600/40 transition"
+                            className="px-2.5 py-1 text-xs font-semibold bg-red-600/20 text-red-300 border border-red-500/30 rounded hover:bg-red-600/40 transition"
                           >
                             Detener
                           </button>
                         </td>
                       </tr>
 
-                      {/* Fila Desplegable con Métricas (Grid 1 a 4 columnas segun resolución) */}
                       {expandedContainers[c.id] && (
                         <tr className="bg-slate-950/70 border-b border-slate-800">
-                          <td colSpan="6" className="p-4 sm:p-6">
+                          <td colSpan="6" className="p-6">
                             {containerStats[c.id] ? (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                                <div className="bg-slate-900/90 p-3 sm:p-4 rounded-lg border border-slate-800">
+                              <div className="grid grid-cols-4 gap-4">
+                                <div className="bg-slate-900/90 p-4 rounded-lg border border-slate-800">
                                   <span className="text-xs text-slate-400 block font-mono">CPU (Contenedor)</span>
-                                  <span className="text-lg sm:text-xl font-bold text-indigo-400 mt-1 block">
+                                  <span className="text-xl font-bold text-indigo-400 mt-1 block">
                                     {containerStats[c.id].cpuPercent}%
                                   </span>
                                 </div>
-
-                                <div className="bg-slate-900/90 p-3 sm:p-4 rounded-lg border border-slate-800">
+                                <div className="bg-slate-900/90 p-4 rounded-lg border border-slate-800">
                                   <span className="text-xs text-slate-400 block font-mono">RAM (Contenedor)</span>
-                                  <span className="text-lg sm:text-xl font-bold text-emerald-400 mt-1 block">
+                                  <span className="text-xl font-bold text-emerald-400 mt-1 block">
                                     {containerStats[c.id].memory.usagePercentage}%
                                   </span>
                                   <span className="text-xs text-slate-500 block mt-1 font-mono">
                                     {(containerStats[c.id].memory.usedBytes / 1024 / 1024).toFixed(1)} MB usados
                                   </span>
                                 </div>
-
-                                <div className="bg-slate-900/90 p-3 sm:p-4 rounded-lg border border-slate-800">
+                                <div className="bg-slate-900/90 p-4 rounded-lg border border-slate-800">
                                   <span className="text-xs text-slate-400 block font-mono">Tráfico Red (RX / TX)</span>
-                                  <span className="text-xs sm:text-sm font-bold text-sky-400 font-mono block mt-2">
+                                  <span className="text-sm font-bold text-sky-400 font-mono block mt-2">
                                     ↓ {containerStats[c.id].network.rxMb} MB | ↑ {containerStats[c.id].network.txMb} MB
                                   </span>
                                 </div>
-
-                                <div className="bg-slate-900/90 p-3 sm:p-4 rounded-lg border border-slate-800">
+                                <div className="bg-slate-900/90 p-4 rounded-lg border border-slate-800">
                                   <span className="text-xs text-slate-400 block font-mono">Hilos / PIDs</span>
-                                  <span className="text-lg sm:text-xl font-bold text-amber-400 mt-1 block">
+                                  <span className="text-xl font-bold text-amber-400 mt-1 block">
                                     {containerStats[c.id].pids} procesos
                                   </span>
                                 </div>
@@ -270,8 +355,8 @@ export default function Home() {
                 </tbody>
               </table>
             </div>
-          )}
-        </div>
+          </>
+        )}
       </section>
     </main>
   );
